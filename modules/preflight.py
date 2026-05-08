@@ -251,7 +251,7 @@ def run_preflight(flags_dict: dict) -> dict:
         print(f"  Original URL    :  {_dim(original_url)}")
         print(f"  {_dim('(URL preserved — will be re-added after subfinder, Rule R3)')}")
     if input_type == "ip":
-        print(f"  {_dim('(IP input — subfinder / httpx / wafw00f / dnsx skipped)')}")
+        print(f"  {_dim('(IP input — subfinder skipped)')}")
     print()
 
     # ── 4. Write back into flags CONFIG ──────────────────────────────────
