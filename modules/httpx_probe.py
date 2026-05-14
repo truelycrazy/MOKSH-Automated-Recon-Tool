@@ -1,6 +1,5 @@
 """
 modules/httpx_probe.py
-======================
 MOKSH — Phase 2: httpx Probe (Live / Dead Split)
 
 Probes every subdomain from Phase 1 to determine which are live.
@@ -31,11 +30,7 @@ Output files:
 
 Return value includes per-URL metadata dict (status + title) so
 wafw00f and report.py can use it without re-parsing httpx_raw.txt.
-
-CRITICAL module — raises RuntimeError on failure.
-SKIPPED for IP input — main.py checks input_type before calling this.
 """
-
 from __future__ import annotations
 
 import shutil
@@ -53,15 +48,12 @@ from utils.parser import (
     apply_extra_flags,
 )
 
-
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
-
 def run_httpx_probe(flags_dict: dict, temp_dir: Path) -> dict:
     """
     Execute Phase 2 — httpx live/dead probe.
-
     Parameters
     ----------
     flags_dict : dict  — resolved config from flags.load_flags()
