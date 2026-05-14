@@ -29,14 +29,6 @@ Two profiles, both always run (R5 — stealth never skips):
   ─────────────────────────────────────────────────
     katana -list temp/waf_domains.txt -depth 2 -rate-limit 5 -delay 2
            -silent -o temp/katana_stealth.txt
-  depth=2 FIXED, rate-limit=5 FIXED — not overridable.
-  delay is semi-overridable via --katana-delay (default 2s).
-  --katana-extra does NOT apply to stealth profile.
-
-  Rationale for stealth being locked:
-    Same logic as nuclei stealth — WAF tolerates light surface crawls.
-    Increasing depth or rate on a WAF domain triggers bot detection.
-    Stealth profile must stay conservative by design.
 
 Endpoint filter (data quality rule):
   After both crawls, ALL endpoints are pooled and filtered:
@@ -50,7 +42,6 @@ Output files:
   temp/katana_filtered.txt     — filtered interesting endpoints (both profiles)
   temp/katana_results.json     — {domain: [endpoints]} for report.py
 
-NON-CRITICAL: each profile independently try/excepted.
 """
 
 from __future__ import annotations
@@ -72,12 +63,10 @@ from utils.parser import (
     apply_extra_flags,
 )
 
-
 # ---------------------------------------------------------------------------
 # Internal: single profile runner
 # Takes a fully-built command list — caller is responsible for assembly
 # ---------------------------------------------------------------------------
-
 def _run_profile(
     cmd:        list[str],
     label:      str,
@@ -91,7 +80,6 @@ def _run_profile(
 
     Returns list of crawled endpoint URLs, or [] on any failure.
     Never raises — error isolation rule.
-
     Parameters
     ----------
     cmd        : list[str] — complete command including all flags
@@ -150,11 +138,9 @@ def _run_profile(
 
     return endpoints
 
-
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
-
 def run_katana(flags_dict: dict, temp_dir: Path) -> dict:
     """
     Execute Phase 4B — katana web crawling (deep + stealth).
@@ -204,9 +190,6 @@ def run_katana(flags_dict: dict, temp_dir: Path) -> dict:
 
     # ══════════════════════════════════════════════════════════════════════
     # DEEP PROFILE
-    # Build full base command, then apply --katana-extra on top.
-    # depth and rate-limit are overridable — no protected flags.
-    # New flags (e.g. -jc, -xhr-extraction) inserted before -o.
     # ══════════════════════════════════════════════════════════════════════
     deep_base = [
         binary,
@@ -220,7 +203,7 @@ def run_katana(flags_dict: dict, temp_dir: Path) -> dict:
     deep_cmd = apply_extra_flags(
         deep_base,
         extra,
-        protected    = [],       # nothing is locked for katana deep
+        protected    = [],       
         output_flags = ["-o"],
     )
 
@@ -238,23 +221,17 @@ def run_katana(flags_dict: dict, temp_dir: Path) -> dict:
 
     # ══════════════════════════════════════════════════════════════════════
     # STEALTH PROFILE
-    # depth (2) and rate-limit (5) are FIXED constants.
-    # delay is semi-overridable via --katana-delay.
-    # --katana-extra does NOT apply to stealth — locked by design.
-    # R5: never skip — shallow crawl still surfaces login/admin paths.
     # ══════════════════════════════════════════════════════════════════════
     stealth_cmd = [
         binary,
         "-list",       str(waf_file),
-        "-depth",      str(f.get("katana_stealth_depth", 2)),   # FIXED
-        "-rate-limit", str(f.get("katana_stealth_rl",    5)),   # FIXED
-        "-delay",      str(f.get("katana_stealth_delay", 2)),   # semi-overridable
+        "-depth",      str(f.get("katana_stealth_depth", 2)),   
+       "-rate-limit", str(f.get("katana_stealth_rl",    5)),  
+        "-delay",      str(f.get("katana_stealth_delay", 2)), 
         "-silent",
         "-o",          str(stealth_out),
     ]
-    # NOTE: apply_extra_flags intentionally NOT called on stealth_cmd.
-    # Stealth profile is locked — increasing depth or rl on WAF domains
-    # triggers bot detection and kills the crawl entirely.
+   
 
     stealth_endpoints = _run_profile(
         cmd        = stealth_cmd,
@@ -318,11 +295,9 @@ def run_katana(flags_dict: dict, temp_dir: Path) -> dict:
         "results_file":        str(results_json),
     }
 
-
 # ---------------------------------------------------------------------------
 # Empty output writer
 # ---------------------------------------------------------------------------
-
 def _write_empty_outputs(temp_dir: Path) -> dict:
     """Write empty outputs so report.py never hits FileNotFoundError."""
     results_json = temp_dir / "katana_results.json"
@@ -339,11 +314,9 @@ def _write_empty_outputs(temp_dir: Path) -> dict:
         "results_file":        str(results_json),
     }
 
-
 # ---------------------------------------------------------------------------
 # Loader helper — called by report.py only
 # ---------------------------------------------------------------------------
-
 def load_katana_results(temp_dir: Path) -> dict[str, list[str]]:
     """
     Load katana_results.json written by run_katana().
