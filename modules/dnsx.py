@@ -1,20 +1,10 @@
 """
 modules/dnsx.py
-===============
 MOKSH — Phase 4C (Part 1): DNS Resolution
 
-Resolves live domains to IPs using dnsx (ProjectDiscovery ecosystem).
-
-Why dnsx and not Python socket (Rule R6):
-  - Handles wildcard DNS records correctly
-  - Handles CNAMEs and chains gracefully
-  - Bulk resolution is fast and multi-threaded
-  - Output format is clean and parseable
-
+Resolves live domains to IPs using dnsx.
 However: dnsx output format has changed across versions. We now handle
 ALL known formats via a multi-pattern parser in utils/parser.py.
-Additionally: if dnsx returns 0 IPs after parsing, a silent socket
-fallback resolves remaining domains — so nmap always has targets.
 
 What it does:
   1. Strips protocol + path from live_urls.txt → bare domains only
@@ -28,15 +18,6 @@ What it does:
 Extra flags:
   --dnsx-extra passes raw flags to dnsx subprocess.
   Known flags are overwritten, new flags inserted before -o.
-
-Output files:
-  temp/domains_stripped.txt  — bare domains sent to dnsx
-  temp/dns_resolved.txt      — raw dnsx output
-  temp/unique_ips.txt        — deduplicated IPs for nmap
-  temp/ip_map.json           — {domain: ip} for report.py
-  temp/waf_ips.txt           — IPs of WAF-protected domains
-
-NON-CRITICAL: raises on hard failure, caught by main.py parallel runner.
 """
 
 from __future__ import annotations
@@ -59,11 +40,9 @@ from utils.parser import (
     extract_domain_from_url,
 )
 
-
 # ---------------------------------------------------------------------------
 # Socket fallback
 # ---------------------------------------------------------------------------
-
 def _socket_resolve(domain: str) -> Optional[str]:
     """
     Resolve a single domain to its first IPv4 address using socket.
@@ -81,11 +60,9 @@ def _socket_resolve(domain: str) -> Optional[str]:
         pass
     return None
 
-
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
-
 def run_dnsx(flags_dict: dict, temp_dir: Path) -> dict:
     """
     Execute DNS resolution phase.
@@ -263,11 +240,9 @@ def run_dnsx(flags_dict: dict, temp_dir: Path) -> dict:
         "ip_map_file":   str(ip_map_file),
     }
 
-
 # ---------------------------------------------------------------------------
 # Full socket fallback (when dnsx binary is missing entirely)
 # ---------------------------------------------------------------------------
-
 def _full_socket_fallback(
     flags_dict: dict,
     temp_dir:   Path,
@@ -335,11 +310,9 @@ def _full_socket_fallback(
         "ip_map_file":   str(ip_map_file),
     }
 
-
 # ---------------------------------------------------------------------------
 # IP input handler
 # ---------------------------------------------------------------------------
-
 def _handle_ip_input(
     flags_dict: dict,
     temp_dir:   Path,
@@ -400,11 +373,9 @@ def _handle_ip_input(
         "ip_map_file":   str(ip_map_file),
     }
 
-
 # ---------------------------------------------------------------------------
 # Empty output writer
 # ---------------------------------------------------------------------------
-
 def _write_empty_outputs(temp_dir: Path) -> dict:
     """Write empty stub files so downstream modules don't crash."""
     for fname in ["unique_ips.txt", "waf_ips.txt", "domains_stripped.txt"]:
@@ -418,12 +389,10 @@ def _write_empty_outputs(temp_dir: Path) -> dict:
         "waf_ips":       [],
         "ip_map_file":   str(ip_map_file),
     }
-
-
+  
 # ---------------------------------------------------------------------------
 # Loader helper — used by report.py
 # ---------------------------------------------------------------------------
-
 def load_ip_map(temp_dir: Path) -> dict[str, str]:
     """
     Load ip_map.json written by run_dnsx().
